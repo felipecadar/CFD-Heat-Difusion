@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CFD</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"
+        integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.5/dist/umd/popper.min.js"
+        integrity="sha384-Xe+8cL9oJa6tN/veChSP7q+mnSPaj5Bcu9mPX5F5xIGE0DVittaqT5lorf0EI7Vk"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.min.js"
+        integrity="sha384-kjU+l4N0Yf4ZOJErLsIcvOU2qSb74wXpOhqTvwVx3OElZRweTnQ6d31fXEoRD1Jy"
+        crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+
+    <py-env>
+        - numpy
+        - matplotlib
+        - scipy
+    </py-env>
+
+    <!-- <script data-ad-client="ca-pub-3063242764607932" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script> -->
+</head>
+
+<body>
+
+
+
+    <nav class="navbar bg-light text-center mb-4">
+        <div class="container-fluid text-center">
+            <div></div>
+            <div class="h1 ">CFD Heat Diffusion</div>
+            <div></div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 970px;">
+
+        <div class=" row ">
+            <div class=" col"></div>
+            <div class="col-md-3">
+
+                <div class="input-group mb-3">
+                    <span class="input-group-text">Grid Size</span>
+                    <input id="grid-size" class="py-input" type="text" value="10">
+                </div>
+
+            </div>
+            <div class="col-md-3">
+                <div class="input-group mb-3">
+                    <span class="input-group-text">Base Temp</span>
+                    <input id="base-tmp" class="py-input" type="text" value="500">
+                </div>
+
+            </div>
+
+            <div class="col-md-3">
+                <div class="input-group mb-3">
+                    <span class="input-group-text">Top Temp</span>
+                    <input id="top-temp" class="py-input" type="text" value="300">
+                </div>
+
+            </div>
+            <div class="col"></div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col"></div>
+            <div class="col-auto">
+                <button type="button" id="btn" pys-onClick="CFD" class="button btn btn-primary">Plot</button>
+            </div>
+            <div class="col"></div>
+        </div>
+
+
+        <div id="plot"></div>
+        <py-script  output="plot">
+            import numpy as np
+            import matplotlib.pyplot as plt
+            from scipy.interpolate import interp2d
+            
+            def CFD(args):   
+            
+                grid_size = int(Element('grid-size').element.value)
+                init_t = int(Element('base-tmp').element.value)
+                inf_t = int(Element('top-temp').element.value)
+            
+            
+                m, n = grid_size, grid_size
+                step_size_m = 1/m
+                step_size_n = 1/n
+            
+                T0 = init_t
+                Tinf = inf_t
+            
+                HdXK = 2.5
+            
+                A = np.zeros([(m * n), (m*n)])
+                C = np.zeros((m*n))
+            
+                for i in range(0, m):
+                    for j in range(0, n):
+                        node = i*n + j
+                        neigh = [(i-1)*n + j, (i+1)*n + j, i*n + (j-1), i*n + (j+1)]
+            
+                        if i < m-1:
+                            A[node, node] = -4
+                            for neigh_node in neigh:
+                                if neigh_node >= 0 and neigh_node < m*n:
+                                    A[node, neigh_node] = 1
+                                else:
+                                    C[node] -= T0
+                        else:
+                            A[node, node] = -2*(HdXK + 2)
+            
+                            neigh[1] = neigh[0]
+            
+                            for neigh_node in neigh:
+                                if neigh_node >= 0 and neigh_node < m*n:
+                                    A[node, neigh_node] += 1
+                                else:
+                                    C[node] -= T0
+            
+                            C[node] -= 2*HdXK*Tinf
+            
+                T = np.linalg.solve(A, C)
+                # T = np.linalg.inv(A) @ C
+            
+                T_mesh = T.reshape((m, n))
+            
+                T_mesh = np.pad(T_mesh, 1, 'constant', constant_values=T0)
+                T_mesh[-1,:] = Tinf
+                m, n = T_mesh.shape
+            
+                plot = False
+                max_iters = 1000
+                mean_error = 0
+                for it in range(max_iters):
+                    T_new = T_mesh.copy()
+                    for i in range(1, T_mesh.shape[0]-1):
+                        for j in range(1, T_mesh.shape[1]-1):
+                            T_new[i,j] = (T_mesh[i-1,j] + T_mesh[i+1,j] + T_mesh[i,j-1] + T_mesh[i,j+1])/4
+            
+                    mean_error = np.mean(np.abs(T_new - T_mesh))
+                    T_mesh = T_new.copy()
+            
+                    if mean_error < 0.01:
+                        break
+            
+                plt.clf()
+                # scipy interp. cubic
+                y = np.linspace(0, 1, m)
+                x = np.linspace(0, 1, n)
+                f = interp2d(x, y, T_mesh, kind='cubic')
+                xnew =  np.linspace(0, 1, 400)
+                ynew =  np.linspace(0, 1, 400)
+                data1 = f(xnew,ynew)
+                Xn, Yn = np.meshgrid(xnew, ynew)
+                # plt.pcolormesh(Xn, Yn, data1, cmap='coolwarm')
+            
+                yd, xd = np.gradient(T_mesh)
+                def func_to_vectorize(_x, _y, dx, dy, scaling=0.01):
+                    grad = np.array([dx, dy])
+                    grad /= np.linalg.norm(grad) + 1e-10
+                    dx, dy = grad*scaling
+                    plt.arrow(_x, _y, -dx, -dy, fc="k", ec="k", head_width=0.01, head_length=0.01, alpha=0.5)
+                vectorized_arrow_drawing = np.vectorize(func_to_vectorize)
+            
+                fig, ax = plt.subplots(figsize=(10,10))
+            
+                plt.contourf(Xn, Yn, data1, cmap='coolwarm')
+                orig_x, orig_y = np.meshgrid(x, y)
+                vectorized_arrow_drawing(orig_x, orig_y, xd, yd, scaling=step_size_m/5)
+            
+                plt.suptitle(f"Temperature distribution after {it+1} iterations. Using {m}x{n} grid")
+                plt.title(f"Mean error: {mean_error:.4f}ºC")
+                plt.colorbar()
+                plt.tight_layout()
+
+                Element("plot").write(fig)
+            
+            </py-script>
+
+</body>
+
+</html>
