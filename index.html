@@ -21,15 +21,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
 
-
-
-    <py-env>
-        - numpy
-        - matplotlib
-        - scipy
-        - paths:
-            - cfd_lib.py
-    </py-env>
+    <py-config type="json">
+        {
+            "packages": ["numpy", "matplotlib", "scipy"],
+            "paths": ["cfd_lib.py"]
+        }
+    </py-config>
 
     <!-- <script data-ad-client="ca-pub-3063242764607932" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script> -->
 </head>
@@ -107,7 +104,7 @@
         <div class="row mb-4">
             <div class="col"></div>
             <div class="col-auto">
-                <button type="button" id="btn" py-onClick="runCFD" class="button btn btn-primary">Plot</button>
+                <button type="button" id="btn" py-onClick="runCFD()" class="button btn btn-primary">Plot</button>
             </div>
             <div class="col"></div>
         </div>
@@ -117,6 +114,9 @@
         <py-script  output="plot">
             from cfd_lib import CFD
             
+            def testClick(args=None):
+                print(f"Test Click {args}")
+
             def runCFD(args=None):   
 
                 grid_size = int(Element('grid-size').element.value)
@@ -129,7 +129,9 @@
                 print(f"grid_size=[{grid_size},{grid_size}], T0={init_t}, Tinf={inf_t}, HdXK={HdXK}, error_th={error_th}, max_iters={max_iters}, save_plot={False}, animate={False}")
 
                 fig = CFD(grid_size=[grid_size,grid_size], T0=init_t, Tinf=inf_t, HdXK=HdXK, error_th=error_th, max_iters=max_iters, save_plot=False, animate=False)
+                fig
                 Element("plot").write(fig)
+                print("Done!")
             
             </py-script>
 
