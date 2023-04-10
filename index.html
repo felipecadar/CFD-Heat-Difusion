@@ -21,11 +21,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
 
-    <py-config type="json">
-        {
-            "packages": ["numpy", "matplotlib", "scipy"],
-            "paths": ["cfd_lib.py"]
-        }
+    <py-config type="toml">
+        packages = ["numpy", "matplotlib", "scipy"]
+
+        [[fetch]]
+        files = ["./cfd_lib.py"]
     </py-config>
 
     <!-- <script data-ad-client="ca-pub-3063242764607932" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script> -->
@@ -131,7 +131,6 @@
                 fig = CFD(grid_size=[grid_size,grid_size], T0=init_t, Tinf=inf_t, HdXK=HdXK, error_th=error_th, max_iters=max_iters, save_plot=False, animate=False)
                 fig
                 Element("plot").write(fig)
-                print("Done!")
             
             </py-script>
 

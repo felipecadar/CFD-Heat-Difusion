@@ -88,17 +88,8 @@ def CFD(grid_size=[20,20], T0=500, Tinf=300, HdXK=2.5, error_th=0.01, max_iters=
     T = np.linalg.solve(A, C)
 
     t1 = time.time()
-    print(f"Time taken: {t1-t0}sec")
-
-    print("A:")
-    print(A)
-    
-    print("C:")
-    print(C)
 
     T_mesh = T.reshape((m, n))
-    print("T:")
-    print(T_mesh)
 
     T_mesh = np.pad(T_mesh, 1, 'constant', constant_values=T0)
     T_mesh[-1,:] = Tinf
